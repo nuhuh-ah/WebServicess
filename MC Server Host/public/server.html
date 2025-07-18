@@ -1,103 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Minecraft Server Manager</title>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    h2 { margin-bottom: 10px; }
-    label { display: inline-block; width: 70px; }
-    select, input[type=file] { margin-bottom: 10px; }
-    button { margin: 5px; }
-  </style>
-</head>
-<body>
-  <h2 id="serverName"></h2>
-
-  <div>
-    <label>Version:</label>
-    <select id="version">
-      <option>1.8</option>
-      <option>1.12</option>
-      <option>1.12.2</option>
-      <option>1.16</option>
-      <option>1.18</option>
-      <option selected>1.20</option>
-      <option>1.20.2</option>
-      <option>1.20.4</option>
-      <option>1.21</option>
-      <option>1.21.1</option>
-      <option>1.21.2</option>
-      <option>1.22.0</option>
-      <option>none</option>
-    </select>
-  </div>
-
-  <div>
-    <label>Type:</label>
-    <select id="type">
-      <option>vanilla</option>
-      <option>forge</option>
-      <option>fabric</option>
-      <option>addon</option>
-      <option>forgeoptifine</option>
-    </select>
-  </div>
-
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Server</title></head><body>
+  <h2 id="title"></h2>
+  <select id="version"></select>
+  <select id="type"><option>vanilla</option><option>forge</option><option>fabric</option><option>addon</option></select>
   <button onclick="apply()">Apply</button>
-  <button onclick="startServer()">Start Server</button>
-  <button onclick="stopServer()">Stop Server</button>
-  <button onclick="openConsole()">Console</button>
-  
-  <h3>Upload Plugin/Mod</h3>
-  <input type="file" id="fileUpload" />
-  <button onclick="uploadFile()">Upload</button>
-
+  <button onclick="start()">Start</button>
+  <button onclick="stop()">Stop</button>
+  <button onclick="view()">Console</button>
   <script>
-    const servername = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
-    document.getElementById("serverName").innerText = "Server: " + servername;
-
-    async function apply() {
-      const version = document.getElementById("version").value;
-      const type = document.getElementById("type").value;
-      await fetch(`/api/update/${servername}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ version, type })
-      });
-      alert("Updated!");
+    const name=location.pathname.split('/')[1];
+    document.getElementById('title').innerText='Server: '+name;
+    ['1.8','1.12','1.16','1.18','1.20','1.21'].map(v=>{
+      const o=document.createElement('option');o.innerText=v;document.getElementById('version').append(o);
+    });
+    async function apply(){
+      await fetch(`/api/update/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:document.getElementById('version').value,type:document.getElementById('type').value})});
+      alert('Applied');
     }
-
-    async function startServer() {
-      const res = await fetch(`/api/start/${servername}`, { method: "POST" });
-      const data = await res.json();
-      alert(data.message || "Server started!");
+    async function start(){
+      const j=await(await fetch(`/api/start/${name}`,{method:'POST'})).json();
+      alert(j.message);
     }
-
-    async function stopServer() {
-      const res = await fetch(`/api/stop/${servername}`, { method: "POST" });
-      const data = await res.json();
-      alert(data.message || "Server stopped!");
+    async function stop(){
+      const j=await(await fetch(`/api/stop/${name}`,{method:'POST'})).json();
+      alert(j.message);
     }
-
-    function openConsole() {
-      window.open(`/servers/${servername}/console.log`, '_blank');
-    }
-
-    async function uploadFile() {
-      const fileInput = document.getElementById("fileUpload");
-      if (!fileInput.files.length) return alert("No file chosen");
-      const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
-
-      const res = await fetch(`/api/upload/${servername}`, {
-        method: "POST",
-        body: formData
-      });
-
-      const data = await res.json();
-      alert(data.message || "Upload done");
+    function view(){
+      window.open(`/servers/${name}/console.log`);
+      setInterval(()=>fetch(`/api/ping/${name}`,{method:'POST'}),550000);
     }
   </script>
-</body>
-</html>
+</body></html>
