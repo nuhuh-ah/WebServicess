@@ -1,37 +1,42 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Server Files</title>
-</head>
+<head><title>Files</title></head>
 <body>
-  <h1>Upload Plugin/Mod</h1>
-  <input type="file" id="fileInput" />
-  <button onclick="uploadFile()">Upload</button>
-
-  <h2>Uploaded Files</h2>
-  <ul id="fileList"></ul>
-
-  <button onclick="startServer()">Start Server</button>
-  <button onclick="stopServer()">Stop Server</button>
+  <h2>Manage Files</h2>
+  <input type="file" id="file">
+  <button onclick="upload()">Upload</button>
+  <ul id="list"></ul>
 
   <script>
-    function uploadFile() {
-      const file = document.getElementById("fileInput").files[0];
-      if (!file) return alert("Choose a file first");
+    const name = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
+
+    async function upload() {
       const form = new FormData();
-      form.append("file", file);
-
-      fetch("/api/upload", { method: "POST", body: form })
-        .then(res => res.text())
-        .then(msg => alert(msg));
+      form.append("file", document.getElementById("file").files[0]);
+      await fetch(`/api/upload/${name}`, { method: "POST", body: form });
+      list();
     }
 
-    function startServer() {
-      alert("Server started (simulated)");
+    async function list() {
+      const res = await fetch(`/api/files/${name}`);
+      const files = await res.json();
+      const ul = document.getElementById("list");
+      ul.innerHTML = "";
+      for (const f of files) {
+        const li = document.createElement("li");
+        li.textContent = f + " ";
+        const btn = document.createElement("button");
+        btn.textContent = "Delete";
+        btn.onclick = async () => {
+          await fetch(`/api/files/${name}/${f}`, { method: "DELETE" });
+          list();
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
+      }
     }
-    function stopServer() {
-      alert("Server stopped (simulated)");
-    }
+
+    list();
   </script>
 </body>
 </html>
