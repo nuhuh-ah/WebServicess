@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Server Control</title>
+</head>
+<body>
+  <h1>Server Control</h1>
+  <label>Minecraft Version:</label>
+  <select id="version">
+    <option>1.8</option>
+    <option>1.12</option>
+    <option>1.16</option>
+    <option>1.18</option>
+    <option>1.19</option>
+    <option>1.20</option>
+    <option>1.21</option>
+  </select>
+  <select id="type">
+    <option>vanilla</option>
+    <option>forge</option>
+    <option>fabric</option>
+    <option>addon</option>
+  </select>
+  <button onclick="downloadServer()">Download Server</button>
+  <p id="status"></p>
+  <br>
+  <a href="files.html">Go to Files</a>
+  <a href="settings.html">Go to Settings</a>
+
+  <script>
+    function downloadServer() {
+      const version = document.getElementById("version").value;
+      const type = document.getElementById("type").value;
+      document.getElementById("status").innerText = `Downloading ${type} ${version}...`;
+
+      // Simulate success
+      setTimeout(() => {
+        document.getElementById("status").innerText = "Server downloaded and ready.";
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
