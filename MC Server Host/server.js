@@ -1,77 +1,34 @@
-<html>
-<head>
-  <title>Server</title>
-</head>
-<body>
-  <h2 id="serverName"></h2>
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
 
-  <select id="version">
-    <option>1.8</option>
-    <option>1.12</option>
-    <option>1.16</option>
-    <option>1.18</option>
-    <option selected>1.20</option>
-    <option>1.21</option>
-  </select>
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  <select id="type">
-    <option>vanilla</option>
-    <option>forge</option>
-    <option>fabric</option>
-    <option>addon</option>
-  </select>
+app.use(express.json());
+app.use(express.static('public'));
 
-  <button onclick="apply()">Apply</button>
-  <button onclick="location.href=window.location.pathname + '/files'">Files</button>
-  <button onclick="location.href=window.location.pathname + '/settings'">Settings</button>
+const SERVERS_DIR = path.join(__dirname, 'servers');
 
-  <hr>
+// Ensure servers directory exists
+if (!fs.existsSync(SERVERS_DIR)) fs.mkdirSync(SERVERS_DIR);
 
-  <button onclick="startServer()">Start Server</button>
-  <button onclick="stopServer()">Stop Server</button>
-  <button onclick="checkConsole()">Check Console</button>
+// GET server list
+app.get('/servers', (req, res) => {
+  const servers = fs.readdirSync(SERVERS_DIR).filter(name => fs.statSync(path.join(SERVERS_DIR, name)).isDirectory());
+  res.json(servers);
+});
 
-  <pre id="consoleOutput" style="background:#000;color:#0f0;padding:10px;"></pre>
+// POST create new server
+app.post('/createserver', (req, res) => {
+  const { name, version, type, crack } = req.body;
+  const serverPath = path.join(SERVERS_DIR, `${name}.hoatreehub.com`);
+  if (fs.existsSync(serverPath)) return res.status(400).json({ error: 'Server already exists' });
 
-  <script>
-    const name = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
-    document.getElementById("serverName").innerText = "Server: " + name;
+  fs.mkdirSync(serverPath);
+  fs.writeFileSync(path.join(serverPath, 'info.json'), JSON.stringify({ name, version, type, crack }, null, 2));
+  fs.writeFileSync(path.join(serverPath, 'console.log'), '[Console Initialized]\n');
+  res.json({ success: true });
+});
 
-    async function apply() {
-      const version = document.getElementById("version").value;
-      const type = document.getElementById("type").value;
-      await fetch(`/api/update/${name}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ version, type })
-      });
-      alert("Updated!");
-    }
-
-    async function startServer() {
-      const res = await fetch('/startserver', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name + '.hoatreehub.com' })
-      });
-      const data = await res.json();
-      alert(data.status || data.error);
-    }
-
-    async function stopServer() {
-      const res = await fetch('/stopserver', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name + '.hoatreehub.com' })
-      });
-      const data = await res.json();
-      alert(data.status || data.error);
-    }
-
-    async function checkConsole() {
-      const res = await fetch('/serverconsole/' + name + '.hoatreehub.com');
-      const data = await res.json();
-      document.getElementById('consoleOutput').innerText = JSON.stringify(data, null, 2);
-    }
-  </script>
-</body>
-</html>
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
