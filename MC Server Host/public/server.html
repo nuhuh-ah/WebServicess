@@ -1,82 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Server Control</title>
+  <meta charset="UTF-8" />
+  <title>Minecraft Server Manager</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      background-color: #f0f0f0;
-    }
-    h2 {
-      color: #333;
-    }
-    label, select, button {
-      display: block;
-      margin: 10px 0;
-    }
-    button {
-      padding: 8px 16px;
-      margin-right: 10px;
-      cursor: pointer;
-    }
+    body { font-family: Arial; padding: 20px; }
+    h2 { margin-bottom: 10px; }
+    label { display: inline-block; width: 70px; }
+    select, input[type=file] { margin-bottom: 10px; }
+    button { margin: 5px; }
   </style>
 </head>
 <body>
-  <h2 id="serverName">Server: </h2>
+  <h2 id="serverName"></h2>
 
-  <label>Version:</label>
-  <select id="version">
-    <option>1.8</option>
-    <option>1.12</option>
-    <option>1.16</option>
-    <option>1.18</option>
-    <option selected>1.20</option>
-    <option>1.21</option>
-  </select>
+  <div>
+    <label>Version:</label>
+    <select id="version">
+      <option>1.8</option>
+      <option>1.12</option>
+      <option>1.12.2</option>
+      <option>1.16</option>
+      <option>1.18</option>
+      <option selected>1.20</option>
+      <option>1.20.2</option>
+      <option>1.20.4</option>
+      <option>1.21</option>
+      <option>1.21.1</option>
+      <option>1.21.2</option>
+      <option>1.22.0</option>
+      <option>none</option>
+    </select>
+  </div>
 
-  <label>Type:</label>
-  <select id="type">
-    <option>vanilla</option>
-    <option>forge</option>
-    <option>fabric</option>
-    <option>addon</option>
-  </select>
+  <div>
+    <label>Type:</label>
+    <select id="type">
+      <option>vanilla</option>
+      <option>forge</option>
+      <option>fabric</option>
+      <option>addon</option>
+      <option>forgeoptifine</option>
+    </select>
+  </div>
 
   <button onclick="apply()">Apply</button>
-  <button onclick="goTo('files')">Files</button>
-  <button onclick="goTo('settings')">Settings</button>
-
-  <hr>
-
   <button onclick="startServer()">Start Server</button>
   <button onclick="stopServer()">Stop Server</button>
-  <button onclick="openConsole()">Open Console</button>
+  <button onclick="openConsole()">Console</button>
+  
+  <h3>Upload Plugin/Mod</h3>
+  <input type="file" id="fileUpload" />
+  <button onclick="uploadFile()">Upload</button>
 
   <script>
-    const servername = location.hostname.split(".")[0];
+    const servername = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
     document.getElementById("serverName").innerText = "Server: " + servername;
 
     async function apply() {
       const version = document.getElementById("version").value;
       const type = document.getElementById("type").value;
-
-      const res = await fetch(`/api/update/${servername}`, {
+      await fetch(`/api/update/${servername}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ version, type })
       });
-
-      if (res.ok) {
-        alert("Settings applied!");
-      } else {
-        alert("Failed to apply settings.");
-      }
-    }
-
-    function goTo(path) {
-      location.href = `/${servername}/${path}`;
+      alert("Updated!");
     }
 
     async function startServer() {
@@ -92,7 +81,22 @@
     }
 
     function openConsole() {
-      window.open(`/servers/${servername}/console.log`, "_blank");
+      window.open(`/servers/${servername}/console.log`, '_blank');
+    }
+
+    async function uploadFile() {
+      const fileInput = document.getElementById("fileUpload");
+      if (!fileInput.files.length) return alert("No file chosen");
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      const res = await fetch(`/api/upload/${servername}`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      alert(data.message || "Upload done");
     }
   </script>
 </body>
