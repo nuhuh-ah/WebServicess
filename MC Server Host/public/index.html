@@ -1,94 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>HoaTreeHub - Minecraft Server Creator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #202020;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-top: 50px;
-    }
-    h1 {
-      color: #00ffcc;
-    }
-    form {
-      background: #2a2a2a;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #00ffcc;
-    }
-    input[type="text"] {
-      padding: 10px;
-      width: 300px;
-      border: none;
-      border-radius: 5px;
-      margin-bottom: 10px;
-    }
-    button {
-      background-color: #00ffcc;
-      color: black;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #00ccaa;
-    }
-    #status {
-      margin-top: 20px;
-      color: #ffcc00;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <h1>Create Minecraft Server</h1>
-  <form id="create-server-form">
-    <input type="text" id="servername" placeholder="Enter server name (e.g., myserver.hoatreehub.com)" required>
-    <br>
-    <button type="submit" id="createBtn">Create Server</button>
-  </form>
-
-  <div id="status"></div>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>HoaTreeHub</title></head><body>
+  <h1>Create Server</h1>
+  <input id="name" placeholder="example.hoatreehub.com">
+  <button onclick="create()">Create</button>
+  <p id="msg"></p>
 
   <script>
-    document.getElementById('create-server-form').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const status = document.getElementById('status');
-      const name = document.getElementById('servername').value.trim();
-
-      if (!name || !name.endsWith(".hoatreehub.com")) {
-        return alert("Server name must end with .hoatreehub.com");
-      }
-
-      status.textContent = "Creating server...";
-      try {
-        const response = await fetch('/createserver', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(errText || "Unknown error occurred");
-        }
-
-        const data = await response.json();
-        status.textContent = "Redirecting to server page...";
-        window.location.href = `/${data.name}/server.html`;
-      } catch (err) {
-        console.error(err);
-        status.textContent = "Failed to create server. " + err.message;
-      }
-    });
+    async function create(){
+      const n=document.getElementById('name').value;
+      const res=await fetch('/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n})});
+      const j=await res.json();
+      if(res.ok) window.location.href=`/${n}/server.html`;
+      else document.getElementById('msg').innerText=j.error;
+    }
   </script>
-</body>
-</html>
+</body></html>
