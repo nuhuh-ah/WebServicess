@@ -26,15 +26,15 @@
 
   <br><br>
   <button onclick="apply()">Apply</button>
-  <button onclick="location.href=window.location.pathname + '/files'">Files</button>
-  <button onclick="location.href=window.location.pathname + '/settings'">Settings</button>
+  <button onclick="location.href='/servers/' + servername + '/files'">Files</button>
+  <button onclick="location.href='/servers/' + servername + '/settings'">Settings</button>
   <br><br>
   <button onclick="startServer()">Start Server</button>
   <button onclick="stopServer()">Stop Server</button>
   <button onclick="openConsole()">Open Console</button>
 
   <script>
-    const servername = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
+    const servername = location.hostname.split(".")[0];
     document.getElementById("serverName").innerText = "Server: " + servername;
 
     async function apply() {
