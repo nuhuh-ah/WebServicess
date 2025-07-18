@@ -1,31 +1,99 @@
-<script>
-  const servername = location.hostname.split(".")[0];
-  document.getElementById("serverName").innerText = "Server: " + servername;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Server Control</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    h2 {
+      color: #333;
+    }
+    label, select, button {
+      display: block;
+      margin: 10px 0;
+    }
+    button {
+      padding: 8px 16px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="serverName">Server: </h2>
 
-  async function apply() {
-    const version = document.getElementById("version").value;
-    const type = document.getElementById("type").value;
-    await fetch(`/api/update/${servername}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version, type })
-    });
-    alert("Updated!");
-  }
+  <label>Version:</label>
+  <select id="version">
+    <option>1.8</option>
+    <option>1.12</option>
+    <option>1.16</option>
+    <option>1.18</option>
+    <option selected>1.20</option>
+    <option>1.21</option>
+  </select>
 
-  async function startServer() {
-    const res = await fetch(`/api/start/${servername}`, { method: "POST" });
-    const data = await res.json();
-    alert(data.message || "Server started!");
-  }
+  <label>Type:</label>
+  <select id="type">
+    <option>vanilla</option>
+    <option>forge</option>
+    <option>fabric</option>
+    <option>addon</option>
+  </select>
 
-  async function stopServer() {
-    const res = await fetch(`/api/stop/${servername}`, { method: "POST" });
-    const data = await res.json();
-    alert(data.message || "Server stopped!");
-  }
+  <button onclick="apply()">Apply</button>
+  <button onclick="goTo('files')">Files</button>
+  <button onclick="goTo('settings')">Settings</button>
 
-  function openConsole() {
-    window.open(`/servers/${servername}/console.log`, '_blank');
-  }
-</script>
+  <hr>
+
+  <button onclick="startServer()">Start Server</button>
+  <button onclick="stopServer()">Stop Server</button>
+  <button onclick="openConsole()">Open Console</button>
+
+  <script>
+    const servername = location.hostname.split(".")[0];
+    document.getElementById("serverName").innerText = "Server: " + servername;
+
+    async function apply() {
+      const version = document.getElementById("version").value;
+      const type = document.getElementById("type").value;
+
+      const res = await fetch(`/api/update/${servername}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ version, type })
+      });
+
+      if (res.ok) {
+        alert("Settings applied!");
+      } else {
+        alert("Failed to apply settings.");
+      }
+    }
+
+    function goTo(path) {
+      location.href = `/${servername}/${path}`;
+    }
+
+    async function startServer() {
+      const res = await fetch(`/api/start/${servername}`, { method: "POST" });
+      const data = await res.json();
+      alert(data.message || "Server started!");
+    }
+
+    async function stopServer() {
+      const res = await fetch(`/api/stop/${servername}`, { method: "POST" });
+      const data = await res.json();
+      alert(data.message || "Server stopped!");
+    }
+
+    function openConsole() {
+      window.open(`/servers/${servername}/console.log`, "_blank");
+    }
+  </script>
+</body>
+</html>
