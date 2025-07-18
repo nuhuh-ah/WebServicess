@@ -1,32 +1,67 @@
 <!DOCTYPE html>
 <html>
-<head><title>Server</title></head>
+<head>
+  <title>Server</title>
+</head>
 <body>
   <h2 id="serverName"></h2>
+
+  <label>Version:</label>
   <select id="version">
-    <option>1.8</option><option>1.12</option><option>1.16</option>
-    <option>1.18</option><option selected>1.20</option><option>1.21</option>
+    <option>1.8</option>
+    <option>1.12</option>
+    <option>1.16</option>
+    <option>1.18</option>
+    <option selected>1.20</option>
+    <option>1.21</option>
   </select>
+
+  <label>Type:</label>
   <select id="type">
-    <option>vanilla</option><option>forge</option>
-    <option>fabric</option><option>addon</option>
+    <option>vanilla</option>
+    <option>forge</option>
+    <option>fabric</option>
+    <option>addon</option>
   </select>
+
+  <br><br>
   <button onclick="apply()">Apply</button>
   <button onclick="location.href=window.location.pathname + '/files'">Files</button>
   <button onclick="location.href=window.location.pathname + '/settings'">Settings</button>
+  <br><br>
+  <button onclick="startServer()">Start Server</button>
+  <button onclick="stopServer()">Stop Server</button>
+  <button onclick="openConsole()">Open Console</button>
 
   <script>
-    const name = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
-    document.getElementById("serverName").innerText = "Server: " + name;
+    const servername = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
+    document.getElementById("serverName").innerText = "Server: " + servername;
 
     async function apply() {
       const version = document.getElementById("version").value;
       const type = document.getElementById("type").value;
-      await fetch(`/api/update/${name}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      await fetch(`/api/update/${servername}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ version, type })
       });
       alert("Updated!");
+    }
+
+    async function startServer() {
+      const res = await fetch(`/api/start/${servername}`, { method: "POST" });
+      const data = await res.json();
+      alert(data.message || "Server started!");
+    }
+
+    async function stopServer() {
+      const res = await fetch(`/api/stop/${servername}`, { method: "POST" });
+      const data = await res.json();
+      alert(data.message || "Server stopped!");
+    }
+
+    function openConsole() {
+      window.open(`/servers/${servername}/console.log`, '_blank');
     }
   </script>
 </body>
