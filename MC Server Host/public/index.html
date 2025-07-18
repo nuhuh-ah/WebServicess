@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>HoaTreeHub - Minecraft Server Creator</title>
@@ -44,11 +44,11 @@
   </style>
 </head>
 <body>
-  <h1>Tạo Minecraft Server</h1>
+  <h1>Create Minecraft Server</h1>
   <form id="create-server-form">
-    <input type="text" id="servername" placeholder="Nhập tên server" required>
+    <input type="text" id="servername" placeholder="Enter server name (e.g., myserver.hoatreehub.com)" required>
     <br>
-    <button type="submit" id="createBtn">Tạo Server</button>
+    <button type="submit" id="createBtn">Create Server</button>
   </form>
 
   <script>
@@ -56,21 +56,25 @@
       e.preventDefault();
       const name = document.getElementById('servername').value;
 
+      if (!name.endsWith(".hoatreehub.com")) {
+        return alert("Server name must end with .hoatreehub.com");
+      }
+
       fetch('/createserver', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
       })
       .then(response => {
-        if (!response.ok) throw new Error("Không tạo được server.");
+        if (!response.ok) throw new Error("Failed to create server.");
         return response.json();
       })
       .then(data => {
-        // Chuyển hướng sang trang chính của server
-        window.location.href = `/server.html/${data.name}`;
+        // Redirect to the server control panel
+        window.location.href = `/${data.name}/server.html`;
       })
       .catch(err => {
-        alert("Lỗi: " + err.message);
+        alert("Error: " + err.message);
       });
     });
   </script>
