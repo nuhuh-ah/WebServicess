@@ -1,114 +1,78 @@
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const bodyParser = require('body-parser');
-const multer = require('multer');
-const { exec, spawn } = require('child_process');
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Server</title>
+</head>
+<body>
+  <h2 id="serverName"></h2>
 
-const app = express();
-const port = 3000;
-const serversDir = path.join(__dirname, 'servers');
-const runningServers = {};
+  <select id="version">
+    <option>1.8</option>
+    <option>1.12</option>
+    <option>1.16</option>
+    <option>1.18</option>
+    <option selected>1.20</option>
+    <option>1.21</option>
+  </select>
 
-app.use(bodyParser.json());
-app.use(express.static('public'));
-app.use('/servers', express.static('servers'));
+  <select id="type">
+    <option>vanilla</option>
+    <option>forge</option>
+    <option>fabric</option>
+    <option>addon</option>
+  </select>
 
-if (!fs.existsSync(serversDir)) fs.mkdirSync(serversDir);
+  <button onclick="apply()">Apply</button>
+  <button onclick="location.href=window.location.pathname + '/files'">Files</button>
+  <button onclick="location.href=window.location.pathname + '/settings'">Settings</button>
 
-// Tạo server
-app.post('/createserver', (req, res) => {
-  const { name } = req.body;
-  if (!name || !name.endsWith('.hoatreehub.com')) {
-    return res.status(400).json({ error: 'Invalid server name' });
-  }
+  <hr>
 
-  const safeName = name.replace(/[^a-zA-Z0-9.-]/g, '');
-  const serverPath = path.join(serversDir, safeName);
+  <button onclick="startServer()">Start Server</button>
+  <button onclick="stopServer()">Stop Server</button>
+  <button onclick="checkConsole()">Check Console</button>
 
-  if (fs.existsSync(serverPath)) {
-    return res.status(400).json({ error: 'Server already exists' });
-  }
+  <pre id="consoleOutput" style="background:#000;color:#0f0;padding:10px;"></pre>
 
-  fs.mkdirSync(serverPath);
-  fs.mkdirSync(path.join(serverPath, 'files'));
-  fs.writeFileSync(path.join(serverPath, 'config.json'), JSON.stringify({
-    version: '1.20',
-    type: 'vanilla',
-    crack: true
-  }, null, 2));
+  <script>
+    const name = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
+    document.getElementById("serverName").innerText = "Server: " + name;
 
-  res.json({ name: safeName });
-});
+    async function apply() {
+      const version = document.getElementById("version").value;
+      const type = document.getElementById("type").value;
+      await fetch(`/api/update/${name}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ version, type })
+      });
+      alert("Updated!");
+    }
 
-// Start server (giả lập chạy file run.sh hoặc run.bat)
-app.post('/startserver', (req, res) => {
-  const { name } = req.body;
-  const serverPath = path.join(serversDir, name);
-  const jarPath = path.join(serverPath, 'server.jar');
+    async function startServer() {
+      const res = await fetch('/startserver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name + '.hoatreehub.com' })
+      });
+      const data = await res.json();
+      alert(data.status || data.error);
+    }
 
-  if (!fs.existsSync(serverPath)) {
-    return res.status(404).json({ error: 'Server not found' });
-  }
+    async function stopServer() {
+      const res = await fetch('/stopserver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name + '.hoatreehub.com' })
+      });
+      const data = await res.json();
+      alert(data.status || data.error);
+    }
 
-  if (runningServers[name]) {
-    return res.status(400).json({ error: 'Server already running' });
-  }
-
-  const process = spawn('java', ['-jar', 'server.jar', 'nogui'], {
-    cwd: serverPath
-  });
-
-  runningServers[name] = process;
-
-  process.stdout.on('data', (data) => {
-    console.log(`[${name}] ${data}`);
-  });
-
-  process.stderr.on('data', (data) => {
-    console.error(`[${name} ERROR] ${data}`);
-  });
-
-  process.on('exit', (code) => {
-    console.log(`[${name}] Server exited with code ${code}`);
-    delete runningServers[name];
-  });
-
-  res.json({ status: 'started' });
-});
-
-// Stop server
-app.post('/stopserver', (req, res) => {
-  const { name } = req.body;
-  const proc = runningServers[name];
-
-  if (!proc) return res.status(400).json({ error: 'Server is not running' });
-
-  proc.stdin.write('stop\n');
-  res.json({ status: 'stopping' });
-});
-
-// Xem console logs
-app.get('/serverconsole/:name', (req, res) => {
-  const name = req.params.name;
-  const proc = runningServers[name];
-  if (!proc) return res.status(400).json({ error: 'Server not running' });
-  res.json({ status: 'running' });
-});
-
-// Gửi file HTML
-app.get('/:servername/server.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'server.html'));
-});
-
-app.get('/:servername/server.html/files', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'files.html'));
-});
-
-app.get('/:servername/server.html/settings', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'settings.html'));
-});
-
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
+    async function checkConsole() {
+      const res = await fetch('/serverconsole/' + name + '.hoatreehub.com');
+      const data = await res.json();
+      document.getElementById('consoleOutput').innerText = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
