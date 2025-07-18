@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Server Files</title>
+</head>
+<body>
+  <h1>Upload Plugin/Mod</h1>
+  <input type="file" id="fileInput" />
+  <button onclick="uploadFile()">Upload</button>
+
+  <h2>Uploaded Files</h2>
+  <ul id="fileList"></ul>
+
+  <button onclick="startServer()">Start Server</button>
+  <button onclick="stopServer()">Stop Server</button>
+
+  <script>
+    function uploadFile() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Choose a file first");
+      const form = new FormData();
+      form.append("file", file);
+
+      fetch("/api/upload", { method: "POST", body: form })
+        .then(res => res.text())
+        .then(msg => alert(msg));
+    }
+
+    function startServer() {
+      alert("Server started (simulated)");
+    }
+    function stopServer() {
+      alert("Server stopped (simulated)");
+    }
+  </script>
+</body>
+</html>
