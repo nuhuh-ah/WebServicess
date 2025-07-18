@@ -1,50 +1,60 @@
+// server.js (Full updated with routes for files.html and settings.html)
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const bodyParser = require('body-parser');
+const multer = require('multer');
 
 const app = express();
-const PORT = 3000;
+const port = 3000;
+const serversDir = path.join(__dirname, 'servers');
 
-// Middleware
-app.use(express.static('public'));      // Serve static files
-app.use(express.json());                // Parse JSON from requests
+app.use(bodyParser.json());
+app.use(express.static('public'));
+app.use('/servers', express.static('servers'));
 
-// Route tạo server mới
+if (!fs.existsSync(serversDir)) fs.mkdirSync(serversDir);
+
 app.post('/createserver', (req, res) => {
-  const serverName = req.body.name;
-
-  // Kiểm tra định dạng tên
-  if (!serverName || !serverName.endsWith('.hoatreehub.com')) {
-    return res.status(400).json({ error: 'Invalid server name format' });
+  const { name } = req.body;
+  if (!name || !name.endsWith('.hoatreehub.com')) {
+    return res.status(400).json({ error: 'Invalid server name' });
   }
+  const safeName = name.replace(/[^a-zA-Z0-9.-]/g, '');
+  const serverPath = path.join(serversDir, safeName);
 
-  const folderPath = path.join(__dirname, 'public', serverName);
-
-  // Kiểm tra nếu đã tồn tại
-  if (fs.existsSync(folderPath)) {
+  if (fs.existsSync(serverPath)) {
     return res.status(400).json({ error: 'Server already exists' });
   }
 
-  // Tạo thư mục cho server
-  try {
-    fs.mkdirSync(folderPath, { recursive: true });
+  fs.mkdirSync(serverPath);
+  fs.mkdirSync(path.join(serverPath, 'files'));
+  fs.writeFileSync(path.join(serverPath, 'config.json'), JSON.stringify({
+    version: '1.20',
+    type: 'vanilla',
+    crack: true
+  }, null, 2));
 
-    // Danh sách các file cần copy
-    const templateFiles = ['server.html', 'files.html', 'settings.html'];
-    templateFiles.forEach(file => {
-      const src = path.join(__dirname, 'public', file);
-      const dest = path.join(folderPath, file);
-      fs.copyFileSync(src, dest);
-    });
-
-    return res.json({ name: serverName });
-  } catch (error) {
-    console.error("Failed to create server:", error);
-    return res.status(500).json({ error: 'Failed to create server' });
-  }
+  res.json({ name: safeName });
 });
 
-// Khởi động server
-app.listen(PORT, () => {
-  console.log(`🌐 Server running at http://localhost:${PORT}`);
+app.get('/:servername/server.html', (req, res) => {
+  const servername = req.params.servername;
+  res.sendFile(path.join(__dirname, 'public', 'server.html'));
+});
+
+app.get('/:servername/server.html/files', (req, res) => {
+  const servername = req.params.servername;
+  res.sendFile(path.join(__dirname, 'public', 'files.html'));
+});
+
+app.get('/:servername/server.html/settings', (req, res) => {
+  const servername = req.params.servername;
+  res.sendFile(path.join(__dirname, 'public', 'settings.html'));
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
