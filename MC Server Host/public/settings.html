@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Server Settings</title>
+</head>
+<body>
+  <h1>Server Settings</h1>
+  <label><input type="checkbox" id="crack" /> Enable Crack</label>
+  <button onclick="applySettings()">Apply Settings</button>
+
+  <script>
+    function applySettings() {
+      const crack = document.getElementById("crack").checked;
+      fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ crack })
+      })
+      .then(res => res.text())
+      .then(msg => alert(msg));
+    }
+  </script>
+</body>
+</html>
