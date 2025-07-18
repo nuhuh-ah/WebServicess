@@ -67,7 +67,7 @@
       })
       .then(data => {
         // Chuyển hướng sang trang chính của server
-        window.location.href = `/server/${data.name}`;
+        window.location.href = `/server.html/${data.name}`;
       })
       .catch(err => {
         alert("Lỗi: " + err.message);
