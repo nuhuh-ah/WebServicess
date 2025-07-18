@@ -24,7 +24,7 @@
     }
     input[type="text"] {
       padding: 10px;
-      width: 250px;
+      width: 300px;
       border: none;
       border-radius: 5px;
       margin-bottom: 10px;
@@ -41,6 +41,11 @@
     button:hover {
       background-color: #00ccaa;
     }
+    #status {
+      margin-top: 20px;
+      color: #ffcc00;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -51,31 +56,38 @@
     <button type="submit" id="createBtn">Create Server</button>
   </form>
 
-  <script>
-    document.getElementById('create-server-form').addEventListener('submit', function (e) {
-      e.preventDefault();
-      const name = document.getElementById('servername').value;
+  <div id="status"></div>
 
-      if (!name.endsWith(".hoatreehub.com")) {
+  <script>
+    document.getElementById('create-server-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const status = document.getElementById('status');
+      const name = document.getElementById('servername').value.trim();
+
+      if (!name || !name.endsWith(".hoatreehub.com")) {
         return alert("Server name must end with .hoatreehub.com");
       }
 
-      fetch('/createserver', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      })
-      .then(response => {
-        if (!response.ok) throw new Error("Failed to create server.");
-        return response.json();
-      })
-      .then(data => {
-        // Redirect to the server control panel
+      status.textContent = "Creating server...";
+      try {
+        const response = await fetch('/createserver', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(errText || "Unknown error occurred");
+        }
+
+        const data = await response.json();
+        status.textContent = "Redirecting to server page...";
         window.location.href = `/${data.name}/server.html`;
-      })
-      .catch(err => {
-        alert("Error: " + err.message);
-      });
+      } catch (err) {
+        console.error(err);
+        status.textContent = "Failed to create server. " + err.message;
+      }
     });
   </script>
 </body>
