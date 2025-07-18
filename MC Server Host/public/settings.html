@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Server Settings</title>
-</head>
+<head><title>Settings</title></head>
 <body>
-  <h1>Server Settings</h1>
-  <label><input type="checkbox" id="crack" /> Enable Crack</label>
-  <button onclick="applySettings()">Apply Settings</button>
+  <h2>Server Settings</h2>
+  <label><input type="checkbox" id="crack"> Enable crack</label>
+  <button onclick="apply()">Apply</button>
 
   <script>
-    function applySettings() {
-      const crack = document.getElementById("crack").checked;
-      fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ crack })
-      })
-      .then(res => res.text())
-      .then(msg => alert(msg));
+    const name = location.pathname.split("/")[1].replace(".hoatreehub.com", "");
+
+    async function load() {
+      const res = await fetch(`/api/info/${name}`);
+      const info = await res.json();
+      document.getElementById("crack").checked = info.crack;
     }
+
+    async function apply() {
+      await fetch(`/api/crack/${name}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ crack: document.getElementById("crack").checked })
+      });
+      alert("Settings applied");
+    }
+
+    load();
   </script>
 </body>
 </html>
