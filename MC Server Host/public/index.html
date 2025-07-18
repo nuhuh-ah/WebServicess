@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <title>HoaTreeHub - Minecraft Server Creator</title>
@@ -44,28 +44,34 @@
   </style>
 </head>
 <body>
-  <h1>Create Minecraft Server</h1>
+  <h1>Tạo Minecraft Server</h1>
   <form id="create-server-form">
-    <input type="text" id="servername" placeholder="Enter server name" required>
+    <input type="text" id="servername" placeholder="Nhập tên server" required>
     <br>
-    <button type="submit">Create Server</button>
+    <button type="submit" id="createBtn">Tạo Server</button>
   </form>
 
   <script>
-    document.getElementById("create-server-form").addEventListener("submit", async function (e) {
+    document.getElementById('create-server-form').addEventListener('submit', function (e) {
       e.preventDefault();
-      const serverName = document.getElementById("servername").value;
+      const name = document.getElementById('servername').value;
 
-      const response = await fetch("/createserver", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ name: serverName })
+      fetch('/createserver', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Không tạo được server.");
+        return response.json();
+      })
+      .then(data => {
+        // Chuyển hướng sang trang chính của server
+        window.location.href = `/server/${data.name}`;
+      })
+      .catch(err => {
+        alert("Lỗi: " + err.message);
       });
-
-      const result = await response.text();
-      alert(result);
     });
   </script>
 </body>
