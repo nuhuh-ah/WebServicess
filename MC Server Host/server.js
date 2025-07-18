@@ -34,7 +34,7 @@ app.post("/createserver", (req, res) => {
   fs.mkdirSync(serverPath);
   fs.writeFileSync(path.join(serverPath, "server-info.txt"), `Server: ${serverName}\nCreated at: ${new Date().toISOString()}`);
 
-  res.send(`Server '${serverName}' created successfully.`);
+  res.json({ message: `Server '${serverName}' created successfully.`, name: serverName });
 });
 
 // Start the server
