@@ -1,120 +1,107 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
-
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 
+app.use(express.json());
 app.use(express.static("public"));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-const serversDir = path.join(__dirname, "servers");
-if (!fs.existsSync(serversDir)) fs.mkdirSync(serversDir);
-
-// === API: Create Server ===
-app.post("/createserver", (req, res) => {
-  const serverName = req.body.name;
-  if (!serverName || !serverName.endsWith(".hoatreehub.com")) {
-    return res.status(400).send("Invalid server name.");
-  }
-
-  const serverPath = path.join(serversDir, serverName);
-  if (fs.existsSync(serverPath)) return res.status(400).send("Server already exists.");
-
-  fs.mkdirSync(serverPath);
-  fs.mkdirSync(path.join(serverPath, "plugins"));
-  fs.writeFileSync(path.join(serverPath, "server-info.txt"), `Server: ${serverName}\nCreated: ${new Date().toISOString()}`);
-  fs.writeFileSync(path.join(serverPath, "settings.json"), JSON.stringify({
-    version: "1.20.1",
-    type: "vanilla",
-    crack: true
-  }, null, 2));
-
-  res.redirect(`/server/${serverName}`);
+// Routes for HTML pages
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// === UI Pages ===
-app.get("/server/:name", (req, res) => {
+app.get("/server", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "server.html"));
 });
 
-app.get("/:name/files", (req, res) => {
+app.get("/files", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "files.html"));
 });
 
-app.get("/:name/settings", (req, res) => {
+app.get("/settings", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "settings.html"));
 });
 
-// === Upload Plugin ===
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(serversDir, req.params.name, "plugins");
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.originalname);
+// API: Create Minecraft server
+app.post("/api/create-server", (req, res) => {
+  const { name, version, type, cracked } = req.body;
+
+  if (!name || !name.endsWith(".hoatreehub.com")) {
+    return res.status(400).json({ error: "Invalid server name." });
+  }
+
+  const serverPath = path.join(__dirname, "servers", name);
+  if (fs.existsSync(serverPath)) {
+    return res.status(400).json({ error: "Server already exists." });
+  }
+
+  try {
+    fs.mkdirSync(serverPath, { recursive: true });
+
+    // Create server settings file
+    fs.writeFileSync(
+      path.join(serverPath, "settings.json"),
+      JSON.stringify({ name, version, type, cracked }, null, 2)
+    );
+
+    // Simulate auto crack setup (placeholder)
+    if (cracked === true) {
+      fs.writeFileSync(path.join(serverPath, "crack.txt"), "crack enabled");
+    }
+
+    res.json({ success: true, message: "Server created successfully." });
+  } catch (error) {
+    console.error("Failed to create server:", error);
+    res.status(500).json({ error: "Failed to create server." });
   }
 });
-const upload = multer({ storage });
 
-app.post("/:name/upload", upload.single("file"), (req, res) => {
-  res.send("File uploaded.");
-});
+// File upload using multer
+const upload = multer({ dest: path.join(__dirname, "uploads") });
 
-// === List Plugins ===
-app.get("/:name/list-files", (req, res) => {
-  const pluginPath = path.join(serversDir, req.params.name, "plugins");
-  if (!fs.existsSync(pluginPath)) return res.json([]);
-  const files = fs.readdirSync(pluginPath);
-  res.json(files);
-});
-
-// === Delete Plugin ===
-app.delete("/:name/delete/:filename", (req, res) => {
-  const filePath = path.join(serversDir, req.params.name, "plugins", req.params.filename);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    res.send("Deleted.");
-  } else {
-    res.status(404).send("File not found.");
+app.post("/api/upload", upload.single("file"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded." });
   }
+
+  res.json({ success: true, filename: req.file.filename });
 });
 
-// === Update Settings ===
-app.post("/:name/settings", (req, res) => {
-  const filePath = path.join(serversDir, req.params.name, "settings.json");
-  const data = req.body;
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-  res.send("Settings updated.");
-});
+// API: Toggle crack (simulate)
+app.post("/api/toggle-crack", (req, res) => {
+  const { name, crack } = req.body;
+  const settingsPath = path.join(__dirname, "servers", name, "settings.json");
 
-// === Get Settings ===
-app.get("/:name/settings-data", (req, res) => {
-  const filePath = path.join(serversDir, req.params.name, "settings.json");
-  if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
-  const data = JSON.parse(fs.readFileSync(filePath));
-  res.json(data);
-});
+  if (!fs.existsSync(settingsPath)) {
+    return res.status(404).json({ error: "Server not found." });
+  }
 
-// === Start Server ===
-app.post("/:name/start", (req, res) => {
-  const serverPath = path.join(serversDir, req.params.name);
-  const settingsPath = path.join(serverPath, "settings.json");
   const settings = JSON.parse(fs.readFileSync(settingsPath));
-  // Simulate running server file
-  res.send(`Started server ${req.params.name} with ${settings.version} (${settings.type})`);
+  settings.cracked = crack;
+
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+  res.json({ success: true, message: "Crack setting updated." });
 });
 
-// === Stop Server ===
-app.post("/:name/stop", (req, res) => {
-  res.send(`Stopped server ${req.params.name}`);
+// API: List servers
+app.get("/api/servers", (req, res) => {
+  const serversDir = path.join(__dirname, "servers");
+  if (!fs.existsSync(serversDir)) {
+    return res.json([]);
+  }
+
+  const serverList = fs.readdirSync(serversDir).filter((name) => {
+    const stat = fs.statSync(path.join(serversDir, name));
+    return stat.isDirectory();
+  });
+
+  res.json(serverList);
 });
 
-// === Start Listening ===
+// Start server
 app.listen(port, () => {
-  console.log(`Server manager running at http://localhost:${port}`);
+  console.log(`🌐 Server is running at http://localhost:${port}`);
 });
